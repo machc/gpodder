@@ -449,6 +449,7 @@ class gPodderCli(object):
                         screen.addstr(count+1, 1, \
                                           ' ' + podcast.title + ' - ' + episode.title, attr)
                         count += 1
+#todo: handle scrolling                        
             screen.refresh()
 
         locale.setlocale(locale.LC_ALL, '')
@@ -456,7 +457,6 @@ class gPodderCli(object):
 
         screen = curses.initscr()
         curses.noecho()
-        curses.nocbreak()
         screen.keypad(1)
 
         sel = 1
@@ -468,7 +468,7 @@ class gPodderCli(object):
                 sel+=1
             if key == curses.KEY_UP:
                 sel-=1
-            if key == 'q':
+            if key == ord('q'):
                 break
 
         # terminate
