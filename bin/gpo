@@ -434,23 +434,27 @@ class gPodderCli(object):
         import locale
 
         # init
-        def update_screen(screen, sel):
+        def update_screen(screen):
             screen.clear()
             screen.border(0)
-            count = 0
+            count = 1 # id of episode
             for podcast in self.client.get_podcasts():
                 for episode in podcast.get_episodes():
-                    if episode.is_new and count < screen.getmaxyx()[0]-2:
-                    #safe_print(' ', podcast.title, ' - ', episode.title)
+                    if episode.is_new and \
+                            (count <= first_item + max_items - 1) and \
+                            (count >= first_item):
+
                         if count == sel:
                             attr = curses.A_REVERSE
                         else:
                             attr = curses.A_NORMAL
-                        screen.addstr(count+1, 1, \
-                                          ' ' + podcast.title + ' - ' + episode.title, attr)
-                        count += 1
-#todo: handle scrolling                        
-            screen.refresh()
+
+                        line = (' ' + podcast.title + ' - ' + episode.title)\
+                            .encode(code, 'ignore')
+                        screen.addstr(count + 1 - first_item, 1, line, attr)
+
+                    count += 1
+            screen.refresh()    
 
         locale.setlocale(locale.LC_ALL, '')
         code = locale.getpreferredencoding()
@@ -458,16 +462,24 @@ class gPodderCli(object):
         screen = curses.initscr()
         curses.noecho()
         screen.keypad(1)
-
-        sel = 1
-        # run loop
+        
+        max_items = screen.getmaxyx()[0]-2 # maximum number of items on screen
+        first_item = 1 # id of first item on screen
+        sel = 1 # id of selected item
+        # run ui loop
         while True:
-            update_screen(screen, sel)
+            update_screen(screen)
             key = screen.getch()
-            if key == curses.KEY_DOWN:
-                sel+=1
-            if key == curses.KEY_UP:
-                sel-=1
+            if (key == curses.KEY_DOWN):
+                if (sel == first_item + max_items - 1):
+                    first_item += 1
+                sel += 1
+            if (key == curses.KEY_UP):
+                if (sel == first_item) and \
+                        (first_item > 1):
+                    first_item -= 1
+                if (sel > 1):
+                    sel -= 1
             if key == ord('q'):
                 break
 
