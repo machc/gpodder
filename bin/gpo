@@ -124,6 +124,7 @@ from gpodder import my
 from gpodder import opml
 from gpodder import util
 from gpodder import log
+from gpodder import interactive
 from gpodder.config import config_value_to_string
 
 have_ansi = sys.stdout.isatty() and not gpodder.win32
@@ -427,69 +428,8 @@ class gPodderCli(object):
 
         return True
 
-#todo: use curses.wrapper
-#todo: refactor! create interactive.py
     def interactive(self):
-        import curses
-        import locale
-
-        # init
-        def update_screen(screen):
-            screen.clear()
-            screen.border(0)
-            count = 1 # id of episode
-            for podcast in self.client.get_podcasts():
-                for episode in podcast.get_episodes():
-                    if episode.is_new and \
-                            (count <= first_item + max_items - 1) and \
-                            (count >= first_item):
-
-                        if count == sel:
-                            attr = curses.A_REVERSE
-                        else:
-                            attr = curses.A_NORMAL
-
-                        line = (' ' + podcast.title + ' - ' + episode.title)\
-                            .encode(code, 'ignore')
-                        screen.addstr(count + 1 - first_item, 1, line, attr)
-
-                    count += 1
-            screen.refresh()    
-
-        locale.setlocale(locale.LC_ALL, '')
-        code = locale.getpreferredencoding()
-
-        screen = curses.initscr()
-        curses.noecho()
-        screen.keypad(1)
-        
-        max_items = screen.getmaxyx()[0]-2 # maximum number of items on screen
-        first_item = 1 # id of first item on screen
-        sel = 1 # id of selected item
-        # run ui loop
-        while True:
-            update_screen(screen)
-            key = screen.getch()
-            if (key == curses.KEY_DOWN):
-                if (sel == first_item + max_items - 1):
-                    first_item += 1
-                sel += 1
-            if (key == curses.KEY_UP):
-                if (sel == first_item) and \
-                        (first_item > 1):
-                    first_item -= 1
-                if (sel > 1):
-                    sel -= 1
-            if key == ord('q'):
-                break
-
-        # terminate
-        curses.nocbreak()
-        screen.keypad(0)
-        curses.echo()
-        curses.endwin()
-
-        return True
+        interactive.Interactive().run(self)
 
     def _update_podcast(self, podcast):
         self._start_action(' %s', podcast.title)
