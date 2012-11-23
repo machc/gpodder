@@ -429,7 +429,7 @@ class gPodderCli(object):
         return True
 
     def interactive(self):
-        interactive.Interactive().run(self)
+        interactive.Interactive(self).run()
 
     def _update_podcast(self, podcast):
         self._start_action(' %s', podcast.title)

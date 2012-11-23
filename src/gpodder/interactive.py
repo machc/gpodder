@@ -1,98 +1,65 @@
+# todo: change TUI from curses to urwid
 # todo: show info
-    #todo: show description in new window
     #todo: dehtmlize description 
-# todo: sort by date
-# todo: download %
+    # todo: sort by date
+    # todo: download %
 
-import curses
+import urwid
 import locale
 #todo: maybe use threading?
 import thread
+
+# download
+# if key == ord('d'):
+#             thread.start_new_thread(\
+    #                 self.selected_episode.download, ())
 
 class Interactive(object):
     """
     Interactive command-line user interface. This class helps using gPodder in command-line mode, displaying a navigable list of podcasts and episodes, allowing the user to execute actions on them. 
     """
-
-    def __init__(self):
-        locale.setlocale(locale.LC_ALL, '')
-        self.code = locale.getpreferredencoding()
-        self.screen = curses.initscr()
-        curses.noecho()
-        self.screen.keypad(1)
-        self.max_items = self.screen.getmaxyx()[0]-2 # maximum number of items on screen
-        self.first_item = 1 # id of first item on screen
-        self.selected_id = 1 # id of selected item
-        self.selected_episode = None # episode currently selected
+    def __init__(self, env):
+        self.episodes = None
+        self.env = env
     
-    def update_screen(self, env):
-        self.screen.clear()
-        self.screen.border(0)
-        count = 1 # id of episode
-        for podcast in env.client.get_podcasts():
+    def get_episodes_list(self):
+        episodes = []
+        for podcast in self.env.client.get_podcasts():
             for episode in podcast.get_episodes():
-                if episode.is_new and \
-                        (count <= self.first_item + self.max_items - 1) and \
-                        (count >= self.first_item):
-                    if count == self.selected_id:
-                        attr = curses.A_REVERSE
-                        self.selected_episode = episode
-                    else:
-                        attr = curses.A_NORMAL
-                    line = (' ' + podcast.title + ' - ' + episode.title)\
-                        .encode(self.code, 'ignore')
-                    self.screen.addstr(count + 1 - self.first_item, 1, line, attr)
-                count += 1
-        self.screen.refresh()    
+                if episode.is_new:
+                    episodes.append(episode)
+        self.episodes = episodes
+
+    # class EpisodeListBox(urwid.ListBox):
+    #     def keypress(self, size, key):
+    #         if key=='i':
+                
+
+    def make_episodes_listbox(self, title):
+        body = [urwid.Text(title), urwid.Divider()]
+        for episode in self.episodes:
+            podcast_title = episode._episode.parent.title
+            button = urwid.Button(podcast_title + ': ' +episode.title)
+            urwid.connect_signal(button, 'click', self.show_info, episode)
+            body.append(urwid.AttrMap(button, None, focus_map='reversed'))
+        return self.EpisodeListBox(urwid.SimpleFocusListWalker(body))
         
-    def run(self, env):
-        while True:
-            self.update_screen(env)
-            key = self.screen.getch()
-            # down
-            if (key == curses.KEY_DOWN):
-                if (self.selected_id == self.first_item + self.max_items - 1):
-                    self.first_item += 1
-                # todo: verifiy if is the last episode
-                self.selected_id += 1
-            # up
-            if (key == curses.KEY_UP):
-                if (self.selected_id == self.first_item) and \
-                        (self.first_item > 1):
-                    self.first_item -= 1
-                if (self.selected_id > 1):
-                    self.selected_id -= 1
-            # todo: implement pg up and down
-            # pg down
-#            if (key == curses.KEY_PPAGE):
+    def show_info(self, episode):
+        """
+        Show episode description in a dialog box
+        """
+        urwid.Text(episode.description)
 
-            # pg up
-#            if (key == curses.KEY_NPAGE):
+    def exit_on_q(self, key):
+        if key in ('q', 'Q'):
+            raise urwid.ExitMainLoop()
+        
 
-            if key == ord('i'):
-                # todo: create a class dialog?
-                width = 60
-                height = 20
-                x = self.screen.getmaxyx()[1]/2-width/2
-                y = self.screen.getmaxyx()[0]/2-height/2
-                info_dialog = curses.newwin(height, width, y, x)
-                info_dialog.box()
-                info_dialog.addstr(1, 1, self.selected_episode.description)
-                info_dialog.refresh()
-                info_dialog.getch()
-                
-            # download
-            if key == ord('d'):
-                thread.start_new_thread(\
-                    self.selected_episode.download, ())
-                
-            # quit
-            if key == ord('q'):
-                self.terminate()
-                break
-    
-    def terminate(self):
-        curses.nocbreak()
-        self.screen.keypad(0)
-        curses.echo()
-        curses.endwin()
+    def run(self):
+        self.get_episodes_list()
+        ep_listbox = self.make_episodes_listbox('New episodes')
+
+        main = urwid.Padding(ep_listbox, left=2, right=2)
+        urwid.MainLoop(main, unhandled_input=self.exit_on_q, \
+                           palette=[('reversed', 'standout', '')]).run()
+
