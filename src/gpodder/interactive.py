@@ -1,3 +1,6 @@
+# todo: show info
+    #todo: show description in new window
+    #todo: dehtmlize description 
 # todo: sort by date
 # todo: download %
 
@@ -20,7 +23,7 @@ class Interactive(object):
         self.max_items = self.screen.getmaxyx()[0]-2 # maximum number of items on screen
         self.first_item = 1 # id of first item on screen
         self.selected_id = 1 # id of selected item
-        self.selected_episode = None # episode selected
+        self.selected_episode = None # episode currently selected
     
     def update_screen(self, env):
         self.screen.clear()
@@ -66,12 +69,17 @@ class Interactive(object):
             # pg up
 #            if (key == curses.KEY_NPAGE):
 
-            # todo: implement info
-            # show_episotde_shownotes
-            # info
-#            if key == ord('i'):
-                # todo: How to get correct description?
-                # todo: show description in new window
+            if key == ord('i'):
+                # todo: create a class dialog?
+                width = 60
+                height = 20
+                x = self.screen.getmaxyx()[1]/2-width/2
+                y = self.screen.getmaxyx()[0]/2-height/2
+                info_dialog = curses.newwin(height, width, y, x)
+                info_dialog.box()
+                info_dialog.addstr(1, 1, self.selected_episode.description)
+                info_dialog.refresh()
+                info_dialog.getch()
                 
             # download
             if key == ord('d'):

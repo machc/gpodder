@@ -174,6 +174,7 @@ class Episode(object):
         self._episode = _episode
         self._manager = _manager
         self.title = self._episode.title
+        self.description = self._episode.description
         self.url = self._episode.url
         self.is_new = (self._episode.state == gpodder.STATE_NORMAL and \
                 self._episode.is_new)
