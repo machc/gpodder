@@ -1,8 +1,8 @@
-# todo: change TUI from curses to urwid
 # todo: show info
-    #todo: dehtmlize description 
-    # todo: sort by date
-    # todo: download %
+    # todo: dehtmlize description 
+    # todo: improve popups size/location
+# todo: sort by date
+# todo: download %
 
 import urwid
 import locale
@@ -30,36 +30,62 @@ class Interactive(object):
                     episodes.append(episode)
         self.episodes = episodes
 
-    # class EpisodeListBox(urwid.ListBox):
-    #     def keypress(self, size, key):
-    #         if key=='i':
-                
-
     def make_episodes_listbox(self, title):
         body = [urwid.Text(title), urwid.Divider()]
         for episode in self.episodes:
             podcast_title = episode._episode.parent.title
-            button = urwid.Button(podcast_title + ': ' +episode.title)
-            urwid.connect_signal(button, 'click', self.show_info, episode)
+            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title, episode)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
-        return self.EpisodeListBox(urwid.SimpleFocusListWalker(body))
+        return urwid.ListBox(urwid.SimpleFocusListWalker(body))
         
-    def show_info(self, episode):
-        """
-        Show episode description in a dialog box
-        """
-        urwid.Text(episode.description)
-
     def exit_on_q(self, key):
         if key in ('q', 'Q'):
             raise urwid.ExitMainLoop()
-        
 
     def run(self):
         self.get_episodes_list()
         ep_listbox = self.make_episodes_listbox('New episodes')
+        urwid.MainLoop(ep_listbox, 
+                       unhandled_input=self.exit_on_q, 
+                       palette=[('reversed', 'standout', '')],
+                       pop_ups=True).run()
 
-        main = urwid.Padding(ep_listbox, left=2, right=2)
-        urwid.MainLoop(main, unhandled_input=self.exit_on_q, \
-                           palette=[('reversed', 'standout', '')]).run()
+class EpisodeButton(urwid.Button):
+    signals = ['show_info']
+    def __init__(self, label, episode):
+        urwid.Button.__init__(self, label)
+        self.episode = episode
 
+    def keypress(self, size, key):
+        key = super(EpisodeButton, self).keypress(size, key)
+        if key=='i':
+            self._emit("show_info")
+        else: 
+            return key
+
+class EpisodeButtonPopUp(urwid.PopUpLauncher):
+    def __init__(self, label, episode):
+        self.__super.__init__(EpisodeButton(label, episode))
+        self.episode = episode
+        urwid.connect_signal(self.original_widget, 'show_info',
+            lambda button: self.open_pop_up())
+
+    def create_pop_up(self):
+        pop_up = PopUpDialog(self.episode.description)
+        urwid.connect_signal(pop_up, 'close',
+            lambda button: self.close_pop_up())
+        return pop_up
+
+    def get_pop_up_parameters(self):
+        return {'left':10, 'top':1, 'overlay_width':60, 'overlay_height':30}
+
+class PopUpDialog(urwid.WidgetWrap):
+    """A dialog that appears with nothing but a close button """
+    signals = ['close']
+    def __init__(self, text):
+        close_button = urwid.Button("close")
+        urwid.connect_signal(close_button, 'click',
+            lambda button:self._emit("close"))
+        pile = urwid.Pile([urwid.Text(text), close_button])
+        fill = urwid.Filler(urwid.LineBox(pile))
+        self.__super.__init__(urwid.AttrWrap(fill, 'popbg'))
