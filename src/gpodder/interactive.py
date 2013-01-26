@@ -8,6 +8,8 @@ import urwid
 import locale
 #todo: maybe use threading?
 import thread
+# for pretty pretting html episode info
+import BeautifulSoup
 
 # download
 # if key == ord('d'):
@@ -71,7 +73,8 @@ class EpisodeButtonPopUp(urwid.PopUpLauncher):
             lambda button: self.open_pop_up())
 
     def create_pop_up(self):
-        pop_up = PopUpDialog(self.episode.description)
+        description = BeautifulSoup.BeautifulSoup(self.episode.description).getText(' ')
+        pop_up = PopUpDialog(description)
         urwid.connect_signal(pop_up, 'close',
             lambda button: self.close_pop_up())
         return pop_up
