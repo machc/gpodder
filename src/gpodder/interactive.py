@@ -1,8 +1,8 @@
 # todo: show info
-    # todo: dehtmlize description 
     # todo: improve popups size/location
-# todo: sort by date
-# todo: download %
+# todo: show date
+# todo: activate download button
+# todo show download %
 
 import urwid
 import locale
@@ -10,6 +10,8 @@ import locale
 import thread
 # for pretty pretting html episode info
 import BeautifulSoup
+
+import re
 
 # download
 # if key == ord('d'):
@@ -30,6 +32,9 @@ class Interactive(object):
             for episode in podcast.get_episodes():
                 if episode.is_new:
                     episodes.append(episode)
+        # sort episodes by date
+        episodes.sort(reverse = True, key=lambda k: \
+                          re.sub('(\d\d)/(\d\d)/(\d\d\d\d)', '\g<3>\g<1>\g<2>', k._episode.pubdate_prop))
         self.episodes = episodes
 
     def make_episodes_listbox(self, title):
