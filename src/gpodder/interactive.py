@@ -1,7 +1,6 @@
 # todo: show info
     # todo: improve popups size/location
 # todo: show date
-# todo: activate download button
 # todo show download %
 
 import urwid
@@ -12,11 +11,6 @@ import thread
 import BeautifulSoup
 
 import re
-
-# download
-# if key == ord('d'):
-#             thread.start_new_thread(\
-    #                 self.selected_episode.download, ())
 
 class Interactive(object):
     """
@@ -65,8 +59,13 @@ class EpisodeButton(urwid.Button):
 
     def keypress(self, size, key):
         key = super(EpisodeButton, self).keypress(size, key)
+        # show info
         if key=='i':
             self._emit("show_info")
+        # download
+        elif key == 'd':
+            thread.start_new_thread(\
+                self.episode.download, ())
         else: 
             return key
 
