@@ -124,7 +124,6 @@ from gpodder import my
 from gpodder import opml
 from gpodder import util
 from gpodder import log
-from gpodder import interactive
 from gpodder.config import config_value_to_string
 
 have_ansi = sys.stdout.isatty() and not gpodder.win32
@@ -429,6 +428,7 @@ class gPodderCli(object):
         return True
 
     def interactive(self):
+        from gpodder import interactive
         interactive.Interactive(self).run()
 
     def _update_podcast(self, podcast):
