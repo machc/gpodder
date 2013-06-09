@@ -34,8 +34,8 @@ class Interactive(object):
     def make_episodes_listbox(self, title):
         body = [urwid.Text(title), urwid.Divider()]
         for episode in self.episodes:
-            podcast_title = episode._episode.parent.title
-            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title, episode)
+            podcast_title = episode._episode.parent.title.encode('utf-8')
+            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title.encode('utf-8'), episode)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
         
@@ -77,7 +77,7 @@ class EpisodeButtonPopUp(urwid.PopUpLauncher):
             lambda button: self.open_pop_up())
 
     def create_pop_up(self):
-        description = BeautifulSoup.BeautifulSoup(self.episode.description).getText(' ')
+        description = BeautifulSoup.BeautifulSoup(self.episode.description).getText(' ').encode('utf-8')
         pop_up = PopUpDialog(description)
         urwid.connect_signal(pop_up, 'close',
             lambda button: self.close_pop_up())
