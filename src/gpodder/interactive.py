@@ -1,7 +1,5 @@
-# todo: show info
-    # todo: improve popups size/location
+# todo: improve info popups size/location
 # todo: show date
-# todo show download %
 
 import urwid
 import locale
@@ -9,17 +7,18 @@ import locale
 import thread
 # for pretty pretting html episode info
 import BeautifulSoup
-
 import re
+
+import download
 
 class Interactive(object):
     """
-    Interactive command-line user interface. This class helps using gPodder in command-line mode, displaying a navigable list of podcasts and episodes, allowing the user to execute actions on them. 
+    Interactive command-line user interface. This class helps using gPodder in command-line mode, displaying a navigable list of podcasts and episodes, allowing the user to execute actions on them.
     """
     def __init__(self, env):
         self.episodes = None
         self.env = env
-    
+
     def get_episodes_list(self):
         episodes = []
         for podcast in self.env.client.get_podcasts():
@@ -35,10 +34,10 @@ class Interactive(object):
         body = [urwid.Text(title), urwid.Divider()]
         for episode in self.episodes:
             podcast_title = episode._episode.parent.title.encode('utf-8')
-            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title.encode('utf-8'), episode)
+            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title.encode('utf-8'), episode, self.env)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
-        
+
     def exit_on_q(self, key):
         if key in ('q', 'Q'):
             raise urwid.ExitMainLoop()
@@ -46,16 +45,27 @@ class Interactive(object):
     def run(self):
         self.get_episodes_list()
         ep_listbox = self.make_episodes_listbox('New episodes')
-        urwid.MainLoop(ep_listbox, 
-                       unhandled_input=self.exit_on_q, 
-                       palette=[('reversed', 'standout', '')],
-                       pop_ups=True).run()
+
+        loop = urwid.MainLoop(ep_listbox,
+                              unhandled_input=self.exit_on_q,
+                              palette=[('reversed', 'standout', '')],
+                              pop_ups=True)
+        loop.run()
 
 class EpisodeButton(urwid.Button):
     signals = ['show_info']
-    def __init__(self, label, episode):
+    def __init__(self, label, episode, env):
         urwid.Button.__init__(self, label)
         self.episode = episode
+        self.labelpart = label
+        self.env = env
+        self.task = download.DownloadTask(self.episode._episode, self.env.config)
+
+    # give download status
+    def _update_action(self, progress):
+        progress = ' %3.0f%%' % (progress*100.,)
+        self.set_label(self.labelpart + progress)
+        # todo: need to somehow call loop.draw_screen here?
 
     def keypress(self, size, key):
         key = super(EpisodeButton, self).keypress(size, key)
@@ -64,14 +74,15 @@ class EpisodeButton(urwid.Button):
             self._emit("show_info")
         # download
         elif key == 'd':
-            thread.start_new_thread(\
-                self.episode.download, ())
-        else: 
+            self.task.add_progress_callback(self._update_action)
+            self.task.status = download.DownloadTask.QUEUED
+            thread.start_new_thread(self.task.run, ())
+        else:
             return key
 
 class EpisodeButtonPopUp(urwid.PopUpLauncher):
-    def __init__(self, label, episode):
-        self.__super.__init__(EpisodeButton(label, episode))
+    def __init__(self, label, episode, env):
+        self.__super.__init__(EpisodeButton(label, episode, env))
         self.episode = episode
         urwid.connect_signal(self.original_widget, 'show_info',
             lambda button: self.open_pop_up())
