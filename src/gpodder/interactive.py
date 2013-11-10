@@ -1,5 +1,6 @@
 # todo: improve info popups size/location
 # todo: show date
+# todo: show if episode was marked as old
 
 import urwid
 import locale
@@ -77,6 +78,12 @@ class EpisodeButton(urwid.Button):
             self.task.add_progress_callback(self._update_action)
             self.task.status = download.DownloadTask.QUEUED
             thread.start_new_thread(self.task.run, ())
+        # toggle read/unread
+        elif key == 'm':
+            if self.episode.is_new:
+                self.episode._episode.mark_old()
+            else:
+                self.episode._episode.mark_new()
         else:
             return key
 
