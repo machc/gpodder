@@ -61,15 +61,22 @@ class EpisodeButton(urwid.Button):
         self.labelpart = label
         self.env = env
         self.task = download.DownloadTask(self.episode._episode, self.env.config)
+        self.size = (80, 1)
 
     # give download status
     def _update_action(self, progress):
         progress = ' %3.0f%%' % (progress*100.,)
-        self.set_label(self.labelpart + progress)
+        cols = self.size[0]
+        lblcols = len(self.labelpart)
+        # 8 = <, >, 4 chars for progess + 4 spaces
+        nspaces = cols - lblcols - 10
+        self.set_label(self.labelpart + ' '*nspaces + progress)
         # todo: need to somehow call loop.draw_screen here?
 
     def keypress(self, size, key):
         key = super(EpisodeButton, self).keypress(size, key)
+        # update widget size for positioning text
+        self.size = size
         # show info
         if key=='i':
             self._emit("show_info")
