@@ -27,15 +27,14 @@ class Interactive(object):
                 if episode.is_new:
                     episodes.append(episode)
         # sort episodes by date
-        episodes.sort(reverse = True, key=lambda k: \
-                          re.sub('(\d\d)/(\d\d)/(\d\d\d\d)', '\g<3>\g<1>\g<2>', k._episode.pubdate_prop))
+        episodes.sort(reverse = True, key=lambda k: k._episode.published)
         self.episodes = episodes
 
     def make_episodes_listbox(self, title):
         body = [urwid.Text(title), urwid.Divider()]
         for episode in self.episodes:
             podcast_title = episode._episode.parent.title.encode('utf-8')
-            button = EpisodeButtonPopUp(podcast_title + ': ' + episode.title.encode('utf-8') + ' ' + episode._episode.pubdate_prop,\
+            button = EpisodeButtonPopUp(podcast_title + ': ' + episode.title.encode('utf-8') + ' - ' + episode._episode.pubdate_prop,\
                                             episode, self.env)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
