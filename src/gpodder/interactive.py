@@ -35,7 +35,8 @@ class Interactive(object):
         body = [urwid.Text(title), urwid.Divider()]
         for episode in self.episodes:
             podcast_title = episode._episode.parent.title.encode('utf-8')
-            button = EpisodeButtonPopUp(podcast_title + ': ' +episode.title.encode('utf-8'), episode, self.env)
+            button = EpisodeButtonPopUp(podcast_title + ': ' + episode.title.encode('utf-8') + ' ' + episode._episode.pubdate_prop,\
+                                            episode, self.env)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
 
