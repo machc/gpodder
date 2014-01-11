@@ -36,7 +36,7 @@ class Interactive(object):
             podcast_title = episode._episode.parent.title.encode('utf-8')
             button = EpisodeButtonPopUp(podcast_title + ': ' + episode.title.encode('utf-8') + ' - ' + episode._episode.pubdate_prop,\
                                             episode, self.env)
-            body.append(urwid.AttrMap(button, None, focus_map='reversed'))
+            body.append(urwid.AttrMap(button, None, focus_map='selected'))
         return urwid.ListBox(urwid.SimpleFocusListWalker(body))
 
     def exit_on_q(self, key):
@@ -49,7 +49,9 @@ class Interactive(object):
 
         loop = urwid.MainLoop(ep_listbox,
                               unhandled_input=self.exit_on_q,
-                              palette=[('reversed', 'standout', '')],
+                              palette=[('selected', 'standout', ''),\
+                                           ('downloading', 'bold', ''),\
+                                           ('done', 'underline', '')],
                               pop_ups=True)
         loop.run()
 
@@ -70,7 +72,7 @@ class EpisodeButton(urwid.Button):
         lblcols = len(self.labelpart)
         # 8 = <, >, 4 chars for progess + 4 spaces
         nspaces = cols - lblcols - 10
-        self.set_label(self.labelpart + ' '*nspaces + progress)
+        self.set_label(('downloading', self.labelpart + ' '*nspaces + progress))
         # todo: need to somehow call loop.draw_screen here?
 
     def keypress(self, size, key):
@@ -89,8 +91,10 @@ class EpisodeButton(urwid.Button):
         elif key == 'm':
             if self.episode.is_new:
                 self.episode._episode.mark_old()
+                self.set_label(('done', self.labelpart))
             else:
                 self.episode._episode.mark_new()
+                self.set_label(('selected', self.labelpart))
         else:
             return key
 
