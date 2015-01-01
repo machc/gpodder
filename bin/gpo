@@ -77,6 +77,7 @@ except ImportError:
 import shlex
 import pydoc
 import logging
+import re
 
 try:
     import termios
@@ -485,7 +486,7 @@ class gPodderCli(object):
         self._finish_action()
 
     @FirstArgumentIsPodcastURL
-    def download(self, url=None):
+    def download(self, url=None, regex='.'):
         count = 0
         for podcast in self.client.get_podcasts():
             podcast_printed = False
@@ -495,8 +496,11 @@ class gPodderCli(object):
                         if not podcast_printed:
                             safe_print(inblue(podcast.title))
                             podcast_printed = True
-                        self._download_episode(episode)
-                        count += 1
+                        text = episode.title.encode('ascii', 'ignore') + \
+                               episode.description.encode('ascii', 'ignore')
+                        if re.search(regex, text) is not None:
+                            self._download_episode(episode)
+                            count += 1
 
         safe_print(count, 'episodes downloaded.')
         return True
