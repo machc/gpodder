@@ -506,6 +506,26 @@ class gPodderCli(object):
         return True
 
     @FirstArgumentIsPodcastURL
+    def markold(self, url=None, regex='.'):
+        count = 0
+        for podcast in self.client.get_podcasts():
+            podcast_printed = False
+            if url is None or podcast.url == url:
+                for episode in podcast.get_episodes():
+                    if episode.is_new:
+                        if not podcast_printed:
+                            safe_print(inblue(podcast.title))
+                            podcast_printed = True
+                        text = episode.title.encode('ascii', 'ignore') + \
+                               episode.description.encode('ascii', 'ignore')
+                        if re.search(regex, text) is not None:
+                            episode._episode.mark_old()
+                            count += 1
+
+        safe_print(count, 'episodes marked as old.')
+        return True
+
+    @FirstArgumentIsPodcastURL
     def disable(self, url):
         podcast = self.client.get_podcast(url)
 
